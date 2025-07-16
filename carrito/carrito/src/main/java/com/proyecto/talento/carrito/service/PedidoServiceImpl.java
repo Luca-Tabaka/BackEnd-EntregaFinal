@@ -1,6 +1,9 @@
 package com.proyecto.talento.carrito.service;
 
+import com.proyecto.talento.carrito.model.Articulo;
 import com.proyecto.talento.carrito.model.Pedido;
+import com.proyecto.talento.carrito.model.PedidoArticulo;
+import com.proyecto.talento.carrito.repository.ArticuloRepository;
 import com.proyecto.talento.carrito.repository.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,10 +15,12 @@ import java.util.Optional;
 public class PedidoServiceImpl implements PedidoService {
 
     private final PedidoRepository pedidoRepository;
+    private final ArticuloRepository articuloRepository;
 
     @Autowired
-    public PedidoServiceImpl(PedidoRepository pedidoRepository) {
+    public PedidoServiceImpl(PedidoRepository pedidoRepository, ArticuloRepository articuloRepository) {
         this.pedidoRepository = pedidoRepository;
+        this.articuloRepository = articuloRepository;
     }
 
     public List<Pedido> listarPedidos() {
@@ -27,6 +32,14 @@ public class PedidoServiceImpl implements PedidoService {
     }
 
     public Pedido guardarPedido(Pedido pedido) {
+        if (pedido.getPedidoArticulos() != null) {
+            for (PedidoArticulo pa : pedido.getPedidoArticulos()) {
+                Long articuloId = pa.getArticulo().getId();
+                Articulo articuloCompleto = articuloRepository.findById(articuloId).orElseThrow(() -> new RuntimeException("Artículo no encontrado: ID " + articuloId));
+                pa.setArticulo(articuloCompleto);
+                pa.setPedido(pedido);
+            }
+        }
         return pedidoRepository.save(pedido);
     }
 
